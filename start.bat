@@ -1,0 +1,9 @@
+@echo off
+set DATABASE_URL=mysql://root:CjwlgQbovdLAzdvozJNIhUbgiHSFHvyu@trolley.proxy.rlwy.net:15216/railway
+set OPENAI_API_KEY=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
+set JWT_SECRET=clutch-super-secret-jwt-key-2024-change-this
+set GOOGLE_CLIENT_ID=807712980486-p7ns4f2e78j3pqashq9bnrc9fh24dgrq.apps.googleusercontent.com
+set GOOGLE_CLIENT_SECRET=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
+set VITE_APP_ID=clutch
+set NODE_ENV=development
+pnpm dev

@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1775672378366,
+      "tag": "0000_pink_skin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1775672536412,
+      "tag": "0001_little_rictor",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1775672595097,
+      "tag": "0002_moaning_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1775675951124,
+      "tag": "0003_worthless_shinko_yamashiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1776061473184,
+      "tag": "0004_noisy_nebula",
+      "breakpoints": true
+    }
+  ]
+}
