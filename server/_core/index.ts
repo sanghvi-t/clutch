@@ -1,5 +1,7 @@
 import "dotenv/config";
 import express from "express";
+console.log('[Config] APP_URL:', process.env.APP_URL);
+console.log('[Config] NODE_ENV:', process.env.NODE_ENV);
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
