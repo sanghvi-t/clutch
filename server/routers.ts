@@ -428,7 +428,7 @@ const gamificationRouter = router({
 const wellnessRouter = router({
   getTip: protectedProcedure
     .input(z.object({
-      category: z.enum(["breathing", "focus", "anxiety", "visualization", "pressure"]),
+      category: z.enum(["breathing", "focus", "anxiety", "visualization", "pressure", "confidence", "recovery"]),
       sport: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -441,6 +441,8 @@ const wellnessRouter = router({
         anxiety: "anxiety management and pre-performance nerves",
         visualization: "mental imagery and visualization techniques",
         pressure: "performing under pressure and clutch moment strategies",
+        confidence: "building and maintaining self-confidence and mental toughness",
+        recovery: "mental recovery, rest, and psychological restoration between performances",
       };
 
       const prompt = `Generate a practical mental performance tip for a ${sport} athlete about ${categoryDescriptions[input.category]}.
