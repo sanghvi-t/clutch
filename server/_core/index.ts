@@ -1,3 +1,7 @@
+import { webcrypto } from 'node:crypto';
+if (!globalThis.crypto) {
+  (globalThis as any).crypto = webcrypto;
+}
 import "dotenv/config";
 import express from "express";
 console.log('[Config] APP_URL:', process.env.APP_URL);
