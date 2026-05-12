@@ -37,6 +37,26 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   app.set('trust proxy', 1);
+  // Stripe webhook — must be registered BEFORE express.json() to get raw body
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'] as string;
+    let event;
+    try {
+      const { stripe } = await import('./stripe');
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET ?? '');
+    } catch (err) {
+      res.status(400).send('Webhook signature verification failed');
+      return;
+    }
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as any;
+      const userId = parseInt(session.metadata.userId);
+      const tier = session.metadata.tier;
+      const { upsertSubscription } = await import('../db');
+      await upsertSubscription({ userId, tier, status: 'active' });
+    }
+    res.json({ received: true });
+  });
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

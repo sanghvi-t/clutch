@@ -697,6 +697,24 @@ const notificationRouter = router({
     }),
 });
 
+// ─── Stripe Router ────────────────────────────────────────────────────────────
+const stripeRouter = router({
+  createCheckout: protectedProcedure
+    .input(z.object({ tier: z.enum(['pro', 'elite', 'charter']) }))
+    .mutation(async ({ ctx, input }) => {
+      const { stripe, PRICES } = await import('./_core/stripe');
+      const priceId = PRICES[input.tier];
+      const session = await stripe.checkout.sessions.create({
+        mode: input.tier === 'charter' ? 'payment' : 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.APP_URL}/dashboard?upgraded=true`,
+        cancel_url: `${process.env.APP_URL}/pricing`,
+        metadata: { userId: String(ctx.user.id), tier: input.tier },
+      });
+      return { url: session.url };
+    }),
+});
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -713,6 +731,7 @@ export const appRouter = router({
   mentalMetrics: mentalMetricsRouter,
   wearable: wearableRouter,
   notifications: notificationRouter,
+  stripe: stripeRouter,
 });
 
 export type AppRouter = typeof appRouter;
