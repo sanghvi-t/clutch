@@ -56,6 +56,29 @@ function StatCard({ icon: Icon, label, value, sub, color = "text-primary" }: {
   );
 }
 
+function ManageSubscriptionButton() {
+  const portalSession = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
+    },
+    onError: (err) => {
+      alert("Error: " + err.message);
+    },
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="border-border/60"
+      disabled={portalSession.isPending}
+      onClick={() => portalSession.mutate()}
+    >
+      {portalSession.isPending ? "Loading..." : "Manage Subscription"}
+    </Button>
+  );
+}
+
 export default function Dashboard() {
   const { user, isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -139,6 +162,9 @@ export default function Dashboard() {
                 <Button size="sm" className="bg-primary text-primary-foreground" asChild>
                   <Link href="/pricing">Upgrade to Pro</Link>
                 </Button>
+              )}
+              {tier !== "free" && (
+                <ManageSubscriptionButton />
               )}
               <Button size="sm" variant="outline" className="border-border/60" asChild>
                 <Link href="/training">Start Session</Link>
