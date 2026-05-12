@@ -132,6 +132,9 @@ function UpgradeButton({
     onSuccess: (data) => {
       if (data.url) window.location.href = data.url;
     },
+    onError: (err) => {
+      alert("Checkout error: " + err.message);
+    },
   });
 
   if (!user) {
@@ -143,18 +146,23 @@ function UpgradeButton({
   }
 
   return (
-    <Button
-      variant={ctaVariant}
-      className={`w-full h-11 font-semibold ${className}`}
-      disabled={createCheckout.isPending}
-      onClick={() => createCheckout.mutate({ tier })}
-    >
-      {createCheckout.isPending ? (
-        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
-      ) : (
-        cta
+    <>
+      <Button
+        variant={ctaVariant}
+        className={`w-full h-11 font-semibold ${className}`}
+        disabled={createCheckout.isPending}
+        onClick={() => createCheckout.mutate({ tier })}
+      >
+        {createCheckout.isPending ? (
+          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
+        ) : (
+          cta
+        )}
+      </Button>
+      {createCheckout.isError && (
+        <p className="text-red-400 text-xs mt-2 text-center">{createCheckout.error.message}</p>
       )}
-    </Button>
+    </>
   );
 }
 
