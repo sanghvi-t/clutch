@@ -60,6 +60,7 @@ import {
   updateTrainingPlan,
   upsertSubscription,
   upsertUserProfile,
+  getUserById,
 } from "./db";
 
 const SPORTS = ["pool", "snooker", "pickleball", "basketball", "baseball", "golf", "american football", "soccer"] as const;
@@ -710,6 +711,20 @@ const stripeRouter = router({
         success_url: `${process.env.APP_URL}/dashboard?upgraded=true`,
         cancel_url: `${process.env.APP_URL}/pricing`,
         metadata: { userId: String(ctx.user.id), tier: input.tier },
+      });
+      return { url: session.url };
+    }),
+
+  createPortalSession: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const { stripe } = await import('./_core/stripe');
+      const user = await getUserById(ctx.user.id);
+      if (!user?.stripeCustomerId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'No billing account found. Please subscribe first.' });
+      }
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: process.env.APP_URL + '/dashboard',
       });
       return { url: session.url };
     }),

@@ -52,8 +52,11 @@ async function startServer() {
       const session = event.data.object as any;
       const userId = parseInt(session.metadata.userId);
       const tier = session.metadata.tier;
-      const { upsertSubscription } = await import('../db');
+      const { upsertSubscription, updateUserStripeCustomerId } = await import('../db');
       await upsertSubscription({ userId, tier, status: 'active' });
+      if (session.customer) {
+        await updateUserStripeCustomerId(userId, session.customer);
+      }
     }
     res.json({ received: true });
   });

@@ -928,3 +928,16 @@ export async function upsertPushNotificationPreferences(userId: number, prefs: a
     .onDuplicateKeyUpdate({ set: prefs });
   return getPushNotificationPreferences(userId);
 }
+
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateUserStripeCustomerId(userId: number, stripeCustomerId: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ stripeCustomerId }).where(eq(users.id, userId));
+}
