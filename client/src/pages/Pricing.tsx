@@ -2,12 +2,15 @@ import NavBar from "@/components/NavBar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getLoginUrl } from "@/const";
-import { Check, Zap, Crown, Star } from "lucide-react";
+import { Check, Zap, Crown, Star, Loader2 } from "lucide-react";
 import React from "react";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const TIERS = [
   {
     name: "Free",
+    tier: null as null | "pro" | "elite" | "charter",
     monthlyPrice: "$0",
     annualPrice: null,
     monthlyPeriod: "forever",
@@ -31,6 +34,7 @@ const TIERS = [
   },
   {
     name: "Pro",
+    tier: "pro" as const,
     monthlyPrice: "$6.99",
     annualPrice: "$80",
     monthlyPeriod: "per month",
@@ -58,6 +62,7 @@ const TIERS = [
   },
   {
     name: "Elite",
+    tier: "elite" as const,
     monthlyPrice: "$9.99",
     annualPrice: "$114",
     monthlyPeriod: "per month",
@@ -110,6 +115,48 @@ const FAQ = [
     a: "Annual plans save you 5% compared to monthly billing. Both monthly and annual plans can be cancelled anytime.",
   },
 ];
+
+function UpgradeButton({
+  tier,
+  cta,
+  ctaVariant,
+  className,
+}: {
+  tier: "pro" | "elite" | "charter";
+  cta: string;
+  ctaVariant: "default" | "outline";
+  className: string;
+}) {
+  const { user } = useAuth();
+  const createCheckout = trpc.stripe.createCheckout.useMutation({
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
+    },
+  });
+
+  if (!user) {
+    return (
+      <Button variant={ctaVariant} className={`w-full h-11 font-semibold ${className}`} asChild>
+        <a href={getLoginUrl()}>{cta}</a>
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant={ctaVariant}
+      className={`w-full h-11 font-semibold ${className}`}
+      disabled={createCheckout.isPending}
+      onClick={() => createCheckout.mutate({ tier })}
+    >
+      {createCheckout.isPending ? (
+        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
+      ) : (
+        cta
+      )}
+    </Button>
+  );
+}
 
 export default function Pricing() {
   const [billingPeriod, setBillingPeriod] = React.useState<"monthly" | "annual">("monthly");
@@ -212,19 +259,26 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                <Button
-                  variant={tier.ctaVariant}
-                  className={`w-full h-11 font-semibold ${
-                    tier.name === "Pro"
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-primary/20"
-                      : tier.name === "Elite"
-                      ? "bg-amber-400 text-amber-900 hover:bg-amber-300"
-                      : "border-border/60 hover:border-primary/40"
-                  }`}
-                  asChild
-                >
-                  <a href={getLoginUrl()}>{tier.cta}</a>
-                </Button>
+                {tier.tier ? (
+                  <UpgradeButton
+                    tier={tier.tier}
+                    cta={tier.cta}
+                    ctaVariant={tier.ctaVariant}
+                    className={
+                      tier.name === "Pro"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-primary/20"
+                        : "bg-amber-400 text-amber-900 hover:bg-amber-300"
+                    }
+                  />
+                ) : (
+                  <Button
+                    variant={tier.ctaVariant}
+                    className="w-full h-11 font-semibold border-border/60 hover:border-primary/40"
+                    asChild
+                  >
+                    <a href={getLoginUrl()}>{tier.cta}</a>
+                  </Button>
+                )}
               </div>
             ))}
           </div>
