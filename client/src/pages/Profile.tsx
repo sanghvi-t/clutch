@@ -21,6 +21,26 @@ import { toast } from "sonner";
 
 const SPORTS = ["pool", "snooker", "pickleball", "basketball", "baseball", "golf", "american football", "soccer"];
 
+function ManageSubscriptionButton() {
+  const portalSession = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
+    },
+    onError: (err) => alert("Error: " + err.message),
+  });
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="border-border/60 text-xs"
+      disabled={portalSession.isPending}
+      onClick={() => portalSession.mutate()}
+    >
+      {portalSession.isPending ? "Loading..." : "Manage / Cancel"}
+    </Button>
+  );
+}
+
 export default function Profile() {
   const { user, isAuthenticated, loading, logout } = useAuth();
   const utils = trpc.useUtils();
@@ -185,7 +205,7 @@ export default function Profile() {
                   </Button>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-xs text-muted-foreground space-y-1 mb-4">
                 {tier === "free" && (
                   <p>Upgrade to Pro to unlock AI coaching, adaptive training plans, and full gamification.</p>
                 )}
@@ -195,6 +215,12 @@ export default function Profile() {
                 {tier === "elite" && (
                   <p>You have full access to all Clutch features. Thank you for being an Elite member.</p>
                 )}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="border-border/60 text-xs" asChild>
+                  <Link href="/pricing">View All Plans</Link>
+                </Button>
+                {tier !== "free" && <ManageSubscriptionButton />}
               </div>
             </div>
 
