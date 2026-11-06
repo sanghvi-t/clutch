@@ -35,7 +35,7 @@ const TIERS = [
   {
     name: "Pro",
     tier: "pro" as const,
-    monthlyPrice: "$6.99",
+    monthlyPrice: "$7.99",
     annualPrice: "$80",
     monthlyPeriod: "per month",
     annualSavings: "5%",

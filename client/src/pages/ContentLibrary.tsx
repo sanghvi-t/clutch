@@ -164,12 +164,9 @@ export default function ContentLibrary() {
           </div>
 
           {/* Content Tabs */}
-          <Tabs defaultValue="videos" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="videos" className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                Videos
-              </TabsTrigger>
+          <Tabs defaultValue="articles" className="w-full">
+            {/* Videos tab hidden: mock URLs are placeholders */}
+            <TabsList className="grid w-full grid-cols-1 mb-8">
               <TabsTrigger value="articles" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Articles
