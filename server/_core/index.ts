@@ -77,6 +77,7 @@ async function startServer() {
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
+    app.use('/shots', (_req, res, next) => { res.setHeader('Access-Control-Allow-Origin', '*'); next(); });
     serveStatic(app);
   }
 
