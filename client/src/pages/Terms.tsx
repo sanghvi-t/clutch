@@ -18,7 +18,7 @@ export default function Terms() {
         <h2 className="text-xl font-semibold text-white mt-8 mb-2"> Disclaimer</h2>
         <p>The service is provided &ldquo;as is&rdquo; without warranties. To the extent permitted by law, we are not liable for indirect or consequential damages arising from use of Clutch.</p>
         <h2 className="text-xl font-semibold text-white mt-8 mb-2"> Contact</h2>
-        <p>saggi_13@yahoo.com</p>
+        <p>clutchmentality76@gmail.com</p>
       </div>
     </div>
   );

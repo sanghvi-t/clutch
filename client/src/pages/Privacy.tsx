@@ -27,7 +27,7 @@ export default function Privacy() {
         <h2 className="text-xl font-semibold text-white mt-8 mb-2"> Children</h2>
         <p>Clutch is not directed at children under 13 and we do not knowingly collect their data.</p>
         <h2 className="text-xl font-semibold text-white mt-8 mb-2"> Contact</h2>
-        <p>Questions or deletion requests: saggi_13@yahoo.com</p>
+        <p>Questions or deletion requests: clutchmentality76@gmail.com</p>
       </div>
     </div>
   );
