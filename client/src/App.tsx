@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import ContentLibrary from "./pages/ContentLibrary";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import HelpWidget from "./components/HelpWidget";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <HelpWidget />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

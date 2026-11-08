@@ -731,6 +731,36 @@ const stripeRouter = router({
 });
 
 // ─── App Router ───────────────────────────────────────────────────────────────
+const helpHits = new Map<string, number[]>();
+const helpRouter = router({
+  ask: publicProcedure
+    .input(z.object({
+      messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(1000) })).min(1).max(12),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const ip = String((ctx.req as any)?.headers?.["x-forwarded-for"] || (ctx.req as any)?.ip || "anon").split(",")[0].trim();
+      const now = Date.now();
+      const hits = (helpHits.get(ip) || []).filter((t) => now - t < 60_000);
+      if (hits.length >= 8) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many messages. Try again in a minute." });
+      hits.push(now);
+      helpHits.set(ip, hits);
+
+      const systemPrompt = `You are the Clutch Help assistant. Clutch is an AI mental-performance coaching app for athletes (iOS, Android and web). Answer support questions briefly (max 3 short paragraphs).
+Facts:
+- Plans: Free, Pro and Elite subscriptions (monthly). Do not quote prices; point to the Pricing page. AI Coach requires Pro or Elite.
+- iOS subscriptions are managed in Settings > Apple ID > Subscriptions; Android in Google Play > Payments & subscriptions. Use "Restore Purchases" in the app if a purchase doesn't show.
+- Account deletion: Profile > Delete account, or email clutchmentality76@gmail.com.
+- Privacy: /privacy. Terms: /terms.
+- Support email: clutchmentality76@gmail.com (reply within 1-2 business days).
+Rules: Never invent prices or features; if unsure, direct to the support email. You are not a medical professional; for crisis or serious mental health concerns, tell the user to contact a licensed professional or call/text 988 (US). Do not give coaching here; point to the Coach tab.`;
+
+      const response = await invokeLLM({
+        messages: [{ role: "system", content: systemPrompt }, ...input.messages],
+      });
+      return { content: (response.choices[0]?.message?.content as string) || "Please email clutchmentality76@gmail.com and we'll help." };
+    }),
+});
+
 export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
@@ -747,6 +777,7 @@ export const appRouter = router({
   wearable: wearableRouter,
   notifications: notificationRouter,
   stripe: stripeRouter,
+  help: helpRouter,
 });
 
 export type AppRouter = typeof appRouter;
