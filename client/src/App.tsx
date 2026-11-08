@@ -16,6 +16,8 @@ import Leaderboard from "./pages/Leaderboard";
 import Community from "./pages/Community";
 import Analytics from "./pages/Analytics";
 import ContentLibrary from "./pages/ContentLibrary";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 function Router() {
   return (
@@ -32,6 +34,8 @@ function Router() {
       <Route path={"/community"} component={Community} />
       <Route path={"/analytics"} component={Analytics} />
       <Route path={"/content-library"} component={ContentLibrary} />
+      <Route path={"/privacy"} component={Privacy} />
+      <Route path={"/terms"} component={Terms} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
