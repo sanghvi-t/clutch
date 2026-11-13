@@ -341,7 +341,7 @@ export async function createCommunityPost(userId: number, content: string, postT
   }
 }
 
-export async function getCommunityFeed(limit = 20, offset = 0) {
+export async function getCommunityFeed(limit = 20, offset = 0, viewerId?: number) {
   const db = await getDb();
   if (!db) return [];
   try {
@@ -353,15 +353,27 @@ export async function getCommunityFeed(limit = 20, offset = 0) {
         sport: communityPosts.sport,
         likes: communityPosts.likes,
         createdAt: communityPosts.createdAt,
+        userId: communityPosts.userId,
         userName: users.name,
-        userEmail: users.email,
       })
       .from(communityPosts)
       .leftJoin(users, eq(communityPosts.userId, users.id))
       .orderBy(desc(communityPosts.createdAt))
-      .limit(limit)
+      .limit(limit + 100)
       .offset(offset);
-    return posts;
+    let hidden = new Set<number>();
+    let reported = new Set<number>();
+    if (viewerId) {
+      await ensureModTables();
+      const [b] = await rawDb().query("SELECT blockedId FROM user_blocks WHERE blockerId = ?", [viewerId]);
+      hidden = new Set((b as any[]).map((r) => r.blockedId));
+      const [r] = await rawDb().query("SELECT postId FROM content_reports WHERE reporterId = ?", [viewerId]);
+      reported = new Set((r as any[]).map((x) => x.postId));
+    }
+    return posts
+      .filter((p) => !hidden.has(p.userId) && !reported.has(p.id))
+      .slice(0, limit)
+      .map((p) => ({ ...p, authorName: p.userName || "Athlete" }));
   } catch (error) {
     console.error("[Database] Failed to get community feed:", error);
     return [];
@@ -940,4 +952,59 @@ export async function updateUserStripeCustomerId(userId: number, stripeCustomerI
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ stripeCustomerId }).where(eq(users.id, userId));
+}
+
+
+// ─── Moderation + account deletion ────────────────────────────────────────────
+let _raw: mysql.Pool | null = null;
+function rawDb() {
+  if (!_raw) _raw = mysql.createPool(process.env.DATABASE_URL!);
+  return _raw;
+}
+let _modReady = false;
+export async function ensureModTables() {
+  if (_modReady) return;
+  const p = rawDb();
+  await p.query(`CREATE TABLE IF NOT EXISTS content_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY, reporterId INT NOT NULL, postId INT NOT NULL,
+    reason VARCHAR(255), createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(reporterId), INDEX(postId))`);
+  await p.query(`CREATE TABLE IF NOT EXISTS user_blocks (
+    id INT AUTO_INCREMENT PRIMARY KEY, blockerId INT NOT NULL, blockedId INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE KEY uq (blockerId, blockedId))`);
+  _modReady = true;
+}
+
+export async function reportPost(reporterId: number, postId: number, reason?: string) {
+  await ensureModTables();
+  await rawDb().query("INSERT INTO content_reports (reporterId, postId, reason) VALUES (?,?,?)", [reporterId, postId, reason || null]);
+  console.warn(`[Moderation] post ${postId} reported by user ${reporterId}: ${reason || ""}`);
+  return { success: true };
+}
+
+export async function blockUser(blockerId: number, blockedId: number) {
+  if (blockerId === blockedId) return { success: false };
+  await ensureModTables();
+  await rawDb().query("INSERT IGNORE INTO user_blocks (blockerId, blockedId) VALUES (?,?)", [blockerId, blockedId]);
+  return { success: true };
+}
+
+export async function deleteUserAccount(userId: number) {
+  await ensureModTables();
+  const p = rawDb();
+  const stmts: [string, any[]][] = [
+    ["DELETE FROM content_reports WHERE reporterId = ?", [userId]],
+    ["DELETE FROM user_blocks WHERE blockerId = ? OR blockedId = ?", [userId, userId]],
+    ["DELETE FROM followers WHERE followerId = ? OR followingId = ?", [userId, userId]],
+    ["DELETE FROM friendships WHERE userId1 = ? OR userId2 = ?", [userId, userId]],
+    ["UPDATE referrals SET refereeId = NULL WHERE refereeId = ?", [userId]],
+    ["DELETE FROM referrals WHERE referrerId = ?", [userId]],
+  ];
+  for (const t of ["user_profiles","subscriptions","training_plans","session_logs","chat_messages","user_achievements","performance_metrics","team_members","community_posts","user_challenge_progress","content_recommendations","personalization_preferences","wearable_devices","biometric_data","athlete_profiles","mental_performance_metrics","user_battle_pass_progress","push_notification_preferences"]) {
+    stmts.push([`DELETE FROM ${t} WHERE userId = ?`, [userId]]);
+  }
+  for (const [q, a] of stmts) {
+    try { await p.query(q, a); } catch (e) { console.warn("[DeleteAccount] skipped:", q, (e as Error).message); }
+  }
+  await p.query("DELETE FROM users WHERE id = ?", [userId]);
+  return { success: true };
 }

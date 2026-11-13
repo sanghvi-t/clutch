@@ -6,6 +6,9 @@ import { invokeLLM } from "./_core/llm";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
+  blockUser,
+  deleteUserAccount,
+  reportPost,
   addXp,
   bookmarkContent,
   createAthleteProfile,
@@ -68,6 +71,11 @@ const SPORTS = ["pool", "snooker", "pickleball", "basketball", "baseball", "golf
 // ─── Auth Router ──────────────────────────────────────────────────────────────
 const authRouter = router({
   me: publicProcedure.query((opts) => opts.ctx.user),
+  deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+    const res = await deleteUserAccount(ctx.user.id);
+    ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+    return res;
+  }),
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -494,14 +502,20 @@ Return a JSON object:
 const communityRouter = router({
   getFeed: publicProcedure
     .input(z.object({ limit: z.number().default(20), offset: z.number().default(0) }))
-    .query(async ({ input }) => {
-      return await getCommunityFeed(input.limit, input.offset);
+    .query(async ({ ctx, input }) => {
+      return await getCommunityFeed(input.limit, input.offset, ctx.user?.id);
     }),
+  reportPost: protectedProcedure
+    .input(z.object({ postId: z.number(), reason: z.string().max(255).optional() }))
+    .mutation(async ({ ctx, input }) => reportPost(ctx.user.id, input.postId, input.reason)),
+  blockUser: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ ctx, input }) => blockUser(ctx.user.id, input.userId)),
   createPost: protectedProcedure
     .input(
       z.object({
         content: z.string().min(1).max(500),
-        postType: z.enum(["achievement", "milestone", "tip", "motivation"]),
+        postType: z.enum(["achievement", "milestone", "tip", "motivation"]).default("motivation"),
         sport: z.string().optional(),
       })
     )
@@ -749,7 +763,7 @@ const helpRouter = router({
 Facts:
 - Plans: Free, Pro and Elite subscriptions (monthly). Do not quote prices; point to the Pricing page. AI Coach requires Pro or Elite.
 - iOS subscriptions are managed in Settings > Apple ID > Subscriptions; Android in Google Play > Payments & subscriptions. Use "Restore Purchases" in the app if a purchase doesn't show.
-- Account deletion: Profile > Delete account, or email clutchmentality76@gmail.com.
+- Account deletion: in the app, Profile > Delete Account (permanent). Cancel subscriptions separately in Apple/Google settings, since deleting the account does not cancel them. Or email clutchmentality76@gmail.com.
 - Privacy: /privacy. Terms: /terms.
 - Support email: clutchmentality76@gmail.com (reply within 1-2 business days).
 Rules: Never invent prices or features; if unsure, direct to the support email. You are not a medical professional; for crisis or serious mental health concerns, tell the user to contact a licensed professional or call/text 988 (US). Do not give coaching here; point to the Coach tab.`;

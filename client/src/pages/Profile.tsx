@@ -43,6 +43,7 @@ function ManageSubscriptionButton() {
 
 export default function Profile() {
   const { user, isAuthenticated, loading, logout } = useAuth();
+  const deleteAccount = trpc.auth.deleteAccount.useMutation();
   const utils = trpc.useUtils();
 
   const { data: profile } = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
@@ -232,6 +233,20 @@ export default function Profile() {
               >
                 <LogOut className="w-4 h-4" />
                 Sign out of Clutch
+              </button>
+              <button
+                onClick={async () => {
+                  if (!window.confirm("Permanently delete your account and all data? This cannot be undone. Active subscriptions must be cancelled separately in Apple/Google settings.")) return;
+                  try {
+                    await deleteAccount.mutateAsync();
+                    window.location.href = "/";
+                  } catch (e: any) {
+                    toast.error(e?.message || "Could not delete account");
+                  }
+                }}
+                className="flex items-center gap-3 w-full text-sm text-destructive hover:underline p-1 mt-1"
+              >
+                Delete account
               </button>
             </div>
           </div>
