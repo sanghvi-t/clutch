@@ -501,9 +501,9 @@ Return a JSON object:
 // ─── Community Router ────────────────────────────────────────────────────────────
 const communityRouter = router({
   getFeed: publicProcedure
-    .input(z.object({ limit: z.number().default(20), offset: z.number().default(0) }))
+    .input(z.object({ limit: z.number().default(20), offset: z.number().default(0) }).optional())
     .query(async ({ ctx, input }) => {
-      return await getCommunityFeed(input.limit, input.offset, ctx.user?.id);
+      return await getCommunityFeed(input?.limit ?? 20, input?.offset ?? 0, ctx.user?.id);
     }),
   reportPost: protectedProcedure
     .input(z.object({ postId: z.number(), reason: z.string().max(255).optional() }))
@@ -523,14 +523,14 @@ const communityRouter = router({
       return await createCommunityPost(ctx.user.id, input.content, input.postType, input.sport);
     }),
   getTeams: publicProcedure
-    .input(z.object({ sport: z.string().optional() }))
+    .input(z.object({ sport: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      return await getTeams(input.sport);
+      return await getTeams(input?.sport);
     }),
   getChallenges: publicProcedure
-    .input(z.object({ sport: z.string().optional() }))
+    .input(z.object({ sport: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      return await getChallenges(input.sport);
+      return await getChallenges(input?.sport);
     }),
   joinChallenge: protectedProcedure
     .input(z.object({ challengeId: z.number() }))
